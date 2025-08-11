@@ -103,6 +103,8 @@ export const autenticar = async (req: Request, res: Response, next:NextFunction)
             }
 
           const tokenDecodificado = jwt.verify(token, secretKey);
+
+        req.user = tokenDecodificado
         
           next()
     } catch (error) {
