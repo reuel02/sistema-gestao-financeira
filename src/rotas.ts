@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { autenticar, cadastrar, login } from "./intermediarios.js";
-import { efetuarTransacao } from "./controladores.js";
+import { efetuarTransacao, listarTransacao } from "./controladores.js";
 
 const rotas = Router()
 
@@ -9,6 +9,8 @@ rotas.post('/login', login)
 
 rotas.use(autenticar)
 
-rotas.post('/transacoes', efetuarTransacao)
+rotas.post('/transacoes/efetuar', efetuarTransacao)
+rotas.get('/transacoes/listar', listarTransacao)
 
 export default rotas
+
