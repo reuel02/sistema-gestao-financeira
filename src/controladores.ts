@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "./conexao.js";
-
+import { exportarRelatorio } from "./utils/exportarRelatorio.js";
 
 export const efetuarTransacao = async (req: Request, res: Response) => {
 
@@ -162,6 +162,7 @@ export const gerarRelatorioMensal = async (req: Request, res: Response) => {
         const mes = Number(req.params.mes)
         const ano = Number(req.params.ano)
         const emailUsuario = req.user.email
+        const exportar = req.query.exportar
         
         if (mes < 1 || mes > 12 || isNaN(mes)) {
             return res.status(400).json({mensagem: "Informe um mês válido. Ex: (Dezembro = 12)"})
@@ -187,9 +188,15 @@ export const gerarRelatorioMensal = async (req: Request, res: Response) => {
         if (transacoes.length === 0) {
             return res.status(400).json({mensagem: "Nenhuma transação foi encontrada nesse período."})
         }
-
+        if (exportar) {
+            if (exportar === 'csv' || exportar === 'pdf') {
+                return exportarRelatorio(transacoes, exportar, res)
+            }
+            res.status(400).json({mensagem: "Informe um tipo de arquivo válido para exportação Exemplo: (csv ou pdf)"})
+        }
+        
         const obterNomeDoMes = (mesNumero: number): string => {
-        const meses = [
+            const meses = [
             "janeiro", "fevereiro", "março", "abril",
             "maio", "junho", "julho", "agosto",
             "setembro", "outubro", "novembro", "dezembro"
@@ -199,6 +206,7 @@ export const gerarRelatorioMensal = async (req: Request, res: Response) => {
         }
 
         const nomeDoMes = obterNomeDoMes(Number(mes))
+
 
         return res.json({mensagem: `As transações efetuadas por você em ${nomeDoMes} de ${ano} foram as listadas abaixo:`, transacoes})
         
@@ -211,6 +219,7 @@ export const gerarRelatorioAnual = async (req: Request, res: Response) => {
     try {
         const ano = Number(req.params.ano)
         const emailUsuario = req.user.email
+        const exportar = req.query.exportar
 
         if (isNaN(ano)) {
             return res.status(400).json({mensagem: "Informe um ano válido. Ex: (2025)"})
@@ -231,6 +240,13 @@ export const gerarRelatorioAnual = async (req: Request, res: Response) => {
 
         if (transacoes.length === 0) {
             return res.status(400).json({mensagem: "Nenhuma transação foi encontrada nesse período."})
+        }
+
+        if (exportar) {
+            if (exportar === 'csv' || exportar === 'pdf') {
+                return exportarRelatorio(transacoes, exportar, res)
+            }
+            res.status(400).json({mensagem: "Informe um tipo de arquivo válido para exportação Exemplo: (csv ou pdf)"})
         }
 
         return res.json({mensagem: `As transações efetuadas por você no ano de ${ano} foram as listadas abaixo:`, transacoes})
