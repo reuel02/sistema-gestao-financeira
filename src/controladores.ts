@@ -127,6 +127,117 @@ export const atualizarTransacao = async (req: Request, res: Response) => {
 }   
 
 export const excluirTransacao = async (req: Request, res: Response) => {
-    
+        try {
+            const id = Number(req.params.id)
+            const emailUsuario = req.user.email
+
+            if (isNaN(id)) {
+                return res.status(400).json({ mensagem: "Identificador inválido." });
+            }
+
+            const usuario = await prisma.usuario.findUnique({ where: {email: emailUsuario}})
+
+            if (!usuario) {
+                return res.status(401).json({ mensagem: "Erro na autenticação, efetue o login novamente." });
+            }
+
+            const usuarioId = usuario.id
+
+            const transacao = await prisma.transacoes.findFirst({where: {id, usuarioId}})
+
+            if (!transacao) {
+                return res.status(404).json({mensagem: "A transação com o identificador informado não foi encontrada."})
+            }
+
+            const deletarTransacao = await prisma.transacoes.deleteMany({ where: {id, usuarioId}})
+
+            return res.status(200).json({mensagem: "Transação excluída com sucesso."})
+        } catch (error) {
+            res.status(500).json({mensagem: "Erro interno do servidor."})
+        }
+}
+
+export const gerarRelatorioMensal = async (req: Request, res: Response) => {
+    try {
+        const mes = Number(req.params.mes)
+        const ano = Number(req.params.ano)
+        const emailUsuario = req.user.email
+        
+        if (mes < 1 || mes > 12 || isNaN(mes)) {
+            return res.status(400).json({mensagem: "Informe um mês válido. Ex: (Dezembro = 12)"})
+        }
+
+        if (isNaN(ano)) {
+            return res.status(400).json({mensagem: "Informe um ano válido. Ex: (2025)"})
+        }
+
+        const usuario = await prisma.usuario.findUnique({ where: {email: emailUsuario}})
+
+        if (!usuario) {
+        return res.status(401).json({ mensagem: "Erro na autenticação, efetue o login novamente." });
+        }
+
+        const usuarioId = usuario.id
+        
+        const transacoes = await prisma.transacoes.findMany({ where: {usuarioId, data: {
+        gte: new Date(`${String(ano)}-${String(mes)}-01`), 
+        lte: new Date(`${String(ano)}-${String(mes)}-31`)}
+        }})
+
+        if (transacoes.length === 0) {
+            return res.status(400).json({mensagem: "Nenhuma transação foi encontrada nesse período."})
+        }
+
+        const obterNomeDoMes = (mesNumero: number): string => {
+        const meses = [
+            "janeiro", "fevereiro", "março", "abril",
+            "maio", "junho", "julho", "agosto",
+            "setembro", "outubro", "novembro", "dezembro"
+        ];
+
+        return meses[mesNumero - 1] || "Mês inválido";
+        }
+
+        const nomeDoMes = obterNomeDoMes(Number(mes))
+
+        return res.json({mensagem: `As transações efetuadas por você em ${nomeDoMes} de ${ano} foram as listadas abaixo:`, transacoes})
+        
+    } catch (error) {
+        res.status(500).json({mensagem: "Erro interno do servidor."})
+    }
+}
+
+export const gerarRelatorioAnual = async (req: Request, res: Response) => {
+    try {
+        const ano = Number(req.params.ano)
+        const emailUsuario = req.user.email
+
+        if (isNaN(ano)) {
+            return res.status(400).json({mensagem: "Informe um ano válido. Ex: (2025)"})
+        }
+
+        const usuario = await prisma.usuario.findUnique({ where: {email: emailUsuario}})
+
+        if (!usuario) {
+        return res.status(401).json({ mensagem: "Erro na autenticação, efetue o login novamente." });
+        }
+
+        const usuarioId = usuario.id
+        
+        const transacoes = await prisma.transacoes.findMany({ where: {usuarioId, data: {
+        gte: new Date(`${String(ano)}-01-01`), 
+        lte: new Date(`${String(ano)}-12-31`)}
+        }})
+
+        if (transacoes.length === 0) {
+            return res.status(400).json({mensagem: "Nenhuma transação foi encontrada nesse período."})
+        }
+
+        return res.json({mensagem: `As transações efetuadas por você no ano de ${ano} foram as listadas abaixo:`, transacoes})
+        
+    } catch (error) {
+        res.status(500).json({mensagem: "Erro interno do servidor."})
+    }
+
 }
 

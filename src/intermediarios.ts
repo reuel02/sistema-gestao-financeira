@@ -105,9 +105,6 @@ export const autenticar = async (req: Request, res: Response, next:NextFunction)
           const tokenDecodificado = jwt.verify(token, secretKey);
 
         req.user = tokenDecodificado
-
-        console.log('passou pelo autenticador');
-        
         
           next()
     } catch (error) {
