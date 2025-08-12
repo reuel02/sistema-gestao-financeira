@@ -111,7 +111,7 @@ export const autenticar = async (req: Request, res: Response, next:NextFunction)
         
           next()
     } catch (error) {
-        res.status(500).json({mensagem: "Erro interno do servidor."})
+        res.status(500).json({mensagem: "Erro interno do servidor."})        
     }
 
 }
